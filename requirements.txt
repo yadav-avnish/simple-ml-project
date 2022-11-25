@@ -4,4 +4,7 @@ ipykernel
 matplotlib
 seaborn
 dill
+fastapi
+uvicorn
+pydantic
 -e .

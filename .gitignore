@@ -1,3 +1,4 @@
 artifact
 *.egg-info
 venv
+.env

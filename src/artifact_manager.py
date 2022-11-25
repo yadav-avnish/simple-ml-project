@@ -10,7 +10,7 @@ import shutil
 @dataclass
 class TransformerAndModel:
     transformer:ColumnTransformer
-    model:BaseEstimator
+    model:object
 
 class ArtifactManager:
 
@@ -18,8 +18,12 @@ class ArtifactManager:
         try:
             self.artifact_dir:str=os.path.join(artifact_dir)
             os.makedirs(self.artifact_dir,exist_ok=True)            
-            self.__transformer_file_path=os.path.join("transformer","transformer.pkl")
+            self.__transformer_file_path=os.path.join("data_transform","data_transform.pkl")
             self.__model_file_path=os.path.join("model","model.pkl")
+            self._loaded_transformer_path = None
+            self._loaded_model_path = None
+            self._loaded_transformer=None
+            self._loaded_model = None
             
         except Exception as e:
             raise e
@@ -56,7 +60,7 @@ class ArtifactManager:
         except Exception as e:
             raise e
         
-    def save_model(self,model:BaseEstimator):
+    def save_model(self,model:object):
         try:
             model_file_path = os.path.join(self.artifact_dir,self.__model_file_path)
             if os.path.basename(model_file_path)==model_file_path:
@@ -70,38 +74,50 @@ class ArtifactManager:
 
     def load_transformer(self,artifact_num:Optional[int]=None)->ColumnTransformer:
         try:
-            transformer:ColumnTransformer=None
             if artifact_num is None:
                 transformer_file_path = os.path.join(self._get_dir(to_save=False),self.__transformer_file_path)
             else:
                 transformer_file_path = os.path.join(self.artifact_dir,f"{artifact_num}",self.__transformer_file_path)
             if not os.path.exists(transformer_file_path):
                 raise Exception(f"Transformer is not available at: {transformer_file_path}")
-            with open(transformer_file_path,"rb") as transformer_reader:
-                transformer =  dill.load(transformer_reader)
-            return transformer
+            
+            if self._loaded_transformer_path!=transformer_file_path:
+                with open(transformer_file_path,"rb") as transformer_reader:
+                    transformer =  dill.load(transformer_reader)
+                self._loaded_transformer_path=transformer_file_path
+                self._loaded_transformer=transformer
+                return transformer
+            else:
+                return self._loaded_transformer
         except Exception as e:
             raise e
 
-    def load_model(self,artifact_num:Optional[int]=None)->BaseEstimator:
+    def load_model(self,artifact_num:Optional[int]=None):
         try:
-            model:BaseEstimator=None
+            model=None
             if artifact_num is None:
                 model_file_path = os.path.join(self._get_dir(to_save=False),self.__model_file_path)
             else:
                 model_file_path = os.path.join(self.artifact_dir,f"{artifact_num}",self.__model_file_path)
             if not os.path.exists(model_file_path):
                 raise Exception(f"Model is not available at: {model_file_path}")
-            with open(model_file_path,"rb") as model_reader:
-                model =  dill.load(model_reader)
-            return model
+            if self._loaded_model_path!=model_file_path:
+                    
+                with open(model_file_path,"rb") as model_reader:
+                    model =  dill.load(model_reader)
+                
+                self._loaded_model_path=model_file_path
+                self._loaded_model=model
+                return model
+            else:
+                return self._loaded_model
         except Exception as e:
             raise e
         
     def load_transform_n_model(self,artifact_num:Optional[int]=None)->TransformerAndModel:
         try:
             transformer:ColumnTransformer= self.load_transformer(artifact_num=artifact_num)
-            model:BaseEstimator= self.load_model(artifact_num=artifact_num)
+            model:object= self.load_model(artifact_num=artifact_num)
             return TransformerAndModel(transformer=transformer,model=model)
         except Exception as e:
             raise e
@@ -111,6 +127,8 @@ class ArtifactManager:
             self.save_model(model=transformer_n_model.model,)
         except Exception as e:
             raise e
+        
+
 
         
    
