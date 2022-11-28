@@ -1,4 +1,8 @@
 artifact
+__pycache__
+.vscode
 *.egg-info
 venv
 .env
+env/
+./env
